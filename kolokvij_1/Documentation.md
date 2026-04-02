@@ -1,10 +1,10 @@
-## SISTEMI DALJINSKEGA VODENJA
+## Načrt fizične plasti komunikacijskega sistema
 
-Avtor: Rok Merlak, Niko Korosec, Jakob Sadar
-Program: 1. MAG MEH
----
-## BESEDILO NALOGE:
+Avtorji:
+Rok Merlak - rok.merlak@student.um.si
+Niko Korošec - niko.korosec@student.um.si
+Jakob Sadar - jakob.sadar@student.um.si
 
-Načrtajte fizično plast lastne komunikacije za prenos podatkovnega sporočila v obliki:
-Ime, Priimek, vpisna številka, država (Aleš Novak E300400500 Slovenija)
----
+--- 
+
+Uporabljene Metode: 
