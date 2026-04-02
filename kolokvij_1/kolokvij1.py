@@ -18,8 +18,12 @@ import binascii
 # Podatkovni okvir naj vsebuje vsaj:
 # preambulo, začetek okvirja, kontrolne znake
 # (tip okvirja, naslov pošiljatelja, naslov sprejemnika), konec okvirja
-
-#Nivojska predstavitev
+#
+# Naloga 2:
+# Podatke zaščitite z zaščitnim kodiranjem tako, da dodate popotnico - CRC32
+# 
+#  
+# Nivojska predstavitev
 #    1. NRZ
 
 # Zaščitno kodiranje
@@ -47,8 +51,7 @@ drzava = "Slovenija"
 
 #=======================================================================
 # KONSTANTE OKVIRJA
-#=======================================================================
-
+#=======================================================================    
 PREAMBULA           = bytes([0xAA] * 7)                         # 7 B — sinhronizacija ure
 SFD                 = bytes([0xAB])                             # 1 B — Start Frame Delimiter
 TIP_OKVIRJA         = bytes([0x08, 0x00])                       # 2 B — IPv4
@@ -57,9 +60,6 @@ NASLOV_SPREJEMNIKA  = bytes([0x11,0x22,0x33,0x44,0x55,0x66])    # 6 B MAC
 EOF                 = bytes([0xFF, 0xFE])                       # 2 B — konec okvirja
 #=======================================================================
 
-
-# Import za CRC32
-import binascii
 
 # Funkcija za pretvorbo iz stringa v bytes
 def text_to_bytes(text):
@@ -119,6 +119,37 @@ def data_frame(ime,priimek,vpisna,drzava):
 
     return  okvir
 
+#===========================================================
+# ZAČETEK NRZ KODIRANJA
+#===========================================================
+# Za NRZ kodiranje potrebujemo pretvorbo bytes -> biti
+def bytes_to_bit(okvir):
+
+    biti = []
+
+    for byte in okvir:
+        for i in range(7,-1,-1):
+            biti.append((byte >> i) & 1)
+    #print(biti)
+    #print("\n")
+            
+    return biti
+
+# NRZ - NON RETURN ZERO, če je bit = 1, return +1; Če je bit = 0, return -1
+def nrz_kodiraj(biti):
+
+    nivoji = []
+
+    for b in biti: # Loop over array za vsak element poglej vrednost
+        if b == 1:
+            nivoji.append(+1.0) # Append rabis tu ker nivoji [0] še ne obstaja, zato moras indeks ustvariti z .append; lahko pa bi prej ustvaril array iste velikosti kot biti[] da rezerviras prostor
+        else:
+            nivoji.append(-1.0)
+
+    return nivoji
 
 
-data_frame(ime,priimek,vpisna,drzava)
+okvir = data_frame(ime, priimek, vpisna, drzava)
+okvir_biti = bytes_to_bit(okvir)
+nrz_okvir = nrz_kodiraj(okvir_biti)
+
