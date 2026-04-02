@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import matplotlib.pyplot as plt
 
-from protocol import build_frame, parse_frame, frame_to_bits
+from SDV_teorija.kolokvij_1.protocol import build_frame, parse_frame, frame_to_bits
 
 
 def bytes_to_hex(data: bytes) -> str:
