@@ -10,6 +10,7 @@ DST_ADDR = bytes([0x22])
 EOF = bytes([0x7F])
 
 
+
 def text_to_bytes(text: str) -> bytes:
     return text.encode("utf-8")
 
@@ -59,11 +60,9 @@ def nrz_encode(bits: List[int]) -> List[float]:
 
 
 
-
-
 def hamming_encode_nibble(data_bits):
     
-   # Kodiraj 4 podatkovne bite v Hamming(7,4) kodo.
+   # Kodiraj 4 podatkovne bite v Hamming(7,4) 
    # d = [d1, d2, d3, d4] (indeksi 0-3)
 
    # Postavitev v bloku 
@@ -80,6 +79,24 @@ def hamming_encode_nibble(data_bits):
 
 
     return [p1, p2, d1, p4, d2, d3, d4] # Return list
+
+
+# Apliciraj hamming_encode_nibble() na bit streamu
+
+def hamming_kodiraj(biti):
+
+    while len(biti) % 4 != 0:
+        biti = biti + [0]
+        
+    kodirani = []
+
+    for i in range(0, len(biti), 4):
+        nibble = biti[i:i+4]
+        kodirani.extend(hamming_encode_nibble(nibble))
+    return kodirani
+
+
+
 
 def build_frame(payload_text: str) -> bytes:
     payload = text_to_bytes(payload_text)
@@ -141,4 +158,3 @@ def parse_frame(frame: bytes) -> Dict:
         "eof": eof,
     }
 
-print(frame_to_bits())
