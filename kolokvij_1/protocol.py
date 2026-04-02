@@ -58,6 +58,29 @@ def nrz_encode(bits: List[int]) -> List[float]:
     return [1.0 if bit == 1 else -1.0 for bit in bits]
 
 
+
+
+
+def hamming_encode_nibble(data_bits):
+    
+   # Kodiraj 4 podatkovne bite v Hamming(7,4) kodo.
+   # d = [d1, d2, d3, d4] (indeksi 0-3)
+
+   # Postavitev v bloku 
+   #      pos: 1   2   3   4   5   6   7
+   #           p1  p2  d1  p4  d2  d3  d4
+
+    d1, d2, d3, d4 = data_bits
+
+    # ^ - BINARNI XOR OPERATOR
+
+    p1 = d1 ^ d2 ^ d4        # pokriva pos 1,3,5,7
+    p2 = d1 ^ d3 ^ d4        # pokriva pos 2,3,6,7
+    p4 = d2 ^ d3 ^ d4        # pokriva pos 4,5,6,7  
+
+
+    return [p1, p2, d1, p4, d2, d3, d4] # Return list
+
 def build_frame(payload_text: str) -> bytes:
     payload = text_to_bytes(payload_text)
     payload_len = int_to_bytes(len(payload), 2)
@@ -117,3 +140,5 @@ def parse_frame(frame: bytes) -> Dict:
         "crc_ok": received_crc == calculated_crc,
         "eof": eof,
     }
+
+print(frame_to_bits())
