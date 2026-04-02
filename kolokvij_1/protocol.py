@@ -1,7 +1,7 @@
 import zlib
 from typing import Dict, List
 
-
+# protocol constants
 PREAMBLE = bytes([0xAA] * 4)
 SOF = bytes([0x7E])
 FRAME_TYPE = bytes([0x01])
@@ -10,55 +10,55 @@ DST_ADDR = bytes([0x22])
 EOF = bytes([0x7F])
 
 
-def text_to_bytes(text: str) -> bytes:
+def text_to_bytes(text):
     return text.encode("utf-8")
 
-
-def int_to_bytes(value: int, length: int) -> bytes:
+ 
+def int_to_bytes(value, length):
     return value.to_bytes(length, byteorder="big")
 
 
-def bytes_to_int(data: bytes) -> int:
+def bytes_to_int(data):
     return int.from_bytes(data, byteorder="big")
 
 
-def build_payload(ime: str, priimek: str, vpisna: str, drzava: str) -> str:
-    return f"{ime}|{priimek}|{vpisna}|{drzava}"
+def calculate_crc32(data):
+    crc_value = zlib.crc32(data) & 0xFFFFFFFF  # keep CRC as an unsigned 32-bit value
+    return int_to_bytes(crc_value, 4)  # CRC-32 is stored as 4 bytes
 
 
-def calculate_crc32(data: bytes) -> bytes:
-    crc_value = zlib.crc32(data) & 0xFFFFFFFF
-    return int_to_bytes(crc_value, 4)
-
-
-def frame_to_bits(frame: bytes) -> List[int]:
+def frame_to_bits(frame):
     bits = []
     for byte in frame:
-        for i in range(7, -1, -1):
+        for i in range(7, -1, -1): # # read bits from MSB to LSB so bit order stays standard
             bits.append((byte >> i) & 1)
     return bits
 
 
-def bits_to_bytes(bits: List[int]) -> bytes:
-    if len(bits) % 8 != 0:
-        raise ValueError("Bit list length must be a multiple of 8.")
-
-    output = bytearray()
+def bits_to_bytes(bits):
+    output = bytearray()  # mutable byte container used while rebuilding bytes
 
     for i in range(0, len(bits), 8):
         byte = 0
-        for bit in bits[i:i + 8]:
+        for bit in bits[i:i + 8]: # # take one group of 8 bits and rebuild one byte
             byte = (byte << 1) | bit
         output.append(byte)
 
     return bytes(output)
 
 
-def nrz_encode(bits: List[int]) -> List[float]:
-    return [1.0 if bit == 1 else -1.0 for bit in bits]
+def nrz_encode(bits):
+    levels = []
 
+    for bit in bits:
+        if bit == 1:
+            levels.append(1.0)
+        else:
+            levels.append(-1.0)
 
-def build_frame(payload_text: str) -> bytes:
+    return levels
+
+def build_frame(payload_text):
     payload = text_to_bytes(payload_text)
     payload_len = int_to_bytes(len(payload), 2)
 
@@ -69,16 +69,17 @@ def build_frame(payload_text: str) -> bytes:
     return frame
 
 
-def parse_frame(frame: bytes) -> Dict:
+def parse_frame(frame):
+    # determine the size of each protocol field so parsing stays tied to the protocol definition
     preamble_len = len(PREAMBLE)
     sof_len = len(SOF)
     frame_type_len = len(FRAME_TYPE)
     src_len = len(SRC_ADDR)
     dst_len = len(DST_ADDR)
-    payload_len_field_len = 2
+    payload_len = 2
     crc_len = 4
     eof_len = len(EOF)
-
+    
     preamble = frame[0:preamble_len]
     sof = frame[preamble_len:preamble_len + sof_len]
 
@@ -87,7 +88,7 @@ def parse_frame(frame: bytes) -> Dict:
     src_start = frame_type_start + frame_type_len
     dst_start = src_start + src_len
     payload_len_start = dst_start + dst_len
-    payload_start = payload_len_start + payload_len_field_len
+    payload_start = payload_len_start + payload_len
 
     frame_type = frame[frame_type_start:src_start]
     src_addr = frame[src_start:dst_start]
