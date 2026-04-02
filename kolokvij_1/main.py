@@ -1,5 +1,5 @@
-from SDV_teorija.kolokvij_1.protocol import build_frame, parse_frame
-from SDV_teorija.kolokvij_1.visualisation import (
+from protocol import build_frame, parse_frame
+from visualisation import (
     bytes_to_hex,
     bytes_to_bitstring,
     print_frame_sections,

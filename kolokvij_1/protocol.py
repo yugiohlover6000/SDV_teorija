@@ -1,5 +1,13 @@
 import zlib
-from typing import Dict
+from typing import Dict, List
+
+
+PREAMBLE = bytes([0xAA] * 4)
+SOF = bytes([0x7E])
+FRAME_TYPE = bytes([0x01])
+SRC_ADDR = bytes([0x11])
+DST_ADDR = bytes([0x22])
+EOF = bytes([0x7F])
 
 
 def text_to_bytes(text: str) -> bytes:
@@ -10,7 +18,20 @@ def int_to_bytes(value: int, length: int) -> bytes:
     return value.to_bytes(length, byteorder="big")
 
 
-def frame_to_bits(frame: bytes) -> list[int]:
+def bytes_to_int(data: bytes) -> int:
+    return int.from_bytes(data, byteorder="big")
+
+
+def build_payload(ime: str, priimek: str, vpisna: str, drzava: str) -> str:
+    return f"{ime}|{priimek}|{vpisna}|{drzava}"
+
+
+def calculate_crc32(data: bytes) -> bytes:
+    crc_value = zlib.crc32(data) & 0xFFFFFFFF
+    return int_to_bytes(crc_value, 4)
+
+
+def frame_to_bits(frame: bytes) -> List[int]:
     bits = []
     for byte in frame:
         for i in range(7, -1, -1):
@@ -18,42 +39,69 @@ def frame_to_bits(frame: bytes) -> list[int]:
     return bits
 
 
-def build_frame(payload_text: str) -> bytes:
-    preamble = bytes([0xAA] * 4)
-    sof = bytes([0x7E])
-    frame_type = bytes([0x01])
-    src_addr = bytes([0x11])
-    dst_addr = bytes([0x22])
+def bits_to_bytes(bits: List[int]) -> bytes:
+    if len(bits) % 8 != 0:
+        raise ValueError("Bit list length must be a multiple of 8.")
 
+    output = bytearray()
+
+    for i in range(0, len(bits), 8):
+        byte = 0
+        for bit in bits[i:i + 8]:
+            byte = (byte << 1) | bit
+        output.append(byte)
+
+    return bytes(output)
+
+
+def nrz_encode(bits: List[int]) -> List[float]:
+    return [1.0 if bit == 1 else -1.0 for bit in bits]
+
+
+def build_frame(payload_text: str) -> bytes:
     payload = text_to_bytes(payload_text)
     payload_len = int_to_bytes(len(payload), 2)
 
-    protected_part = frame_type + src_addr + dst_addr + payload_len + payload
-    crc = int_to_bytes(zlib.crc32(protected_part) & 0xFFFFFFFF, 4)
-    eof = bytes([0x7F])
+    protected_part = FRAME_TYPE + SRC_ADDR + DST_ADDR + payload_len + payload
+    crc = calculate_crc32(protected_part)
 
-    frame = preamble + sof + protected_part + crc + eof
+    frame = PREAMBLE + SOF + protected_part + crc + EOF
     return frame
 
 
 def parse_frame(frame: bytes) -> Dict:
-    preamble = frame[0:4]
-    sof = frame[4]
+    preamble_len = len(PREAMBLE)
+    sof_len = len(SOF)
+    frame_type_len = len(FRAME_TYPE)
+    src_len = len(SRC_ADDR)
+    dst_len = len(DST_ADDR)
+    payload_len_field_len = 2
+    crc_len = 4
+    eof_len = len(EOF)
 
-    frame_type = frame[5]
-    src_addr = frame[6]
-    dst_addr = frame[7]
-    payload_len = int.from_bytes(frame[8:10], byteorder="big")
+    preamble = frame[0:preamble_len]
+    sof = frame[preamble_len:preamble_len + sof_len]
 
-    payload_start = 10
+    header_start = preamble_len + sof_len
+    frame_type_start = header_start
+    src_start = frame_type_start + frame_type_len
+    dst_start = src_start + src_len
+    payload_len_start = dst_start + dst_len
+    payload_start = payload_len_start + payload_len_field_len
+
+    frame_type = frame[frame_type_start:src_start]
+    src_addr = frame[src_start:dst_start]
+    dst_addr = frame[dst_start:payload_len_start]
+
+    payload_len = bytes_to_int(frame[payload_len_start:payload_start])
     payload_end = payload_start + payload_len
 
     payload = frame[payload_start:payload_end]
-    received_crc = int.from_bytes(frame[payload_end:payload_end + 4], byteorder="big")
-    eof = frame[payload_end + 4]
+    received_crc = frame[payload_end:payload_end + crc_len]
+    eof = frame[payload_end + crc_len:payload_end + crc_len + eof_len]
 
-    protected_part = frame[5:payload_end]
-    calculated_crc = zlib.crc32(protected_part) & 0xFFFFFFFF
+    protected_part = frame[header_start:payload_end]
+    calculated_crc = calculate_crc32(protected_part)
 
     return {
         "preamble": preamble,
