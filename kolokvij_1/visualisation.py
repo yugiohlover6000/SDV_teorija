@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from typing import Dict
 
-from protocol import frame_to_bits
+from protocol import frame_to_bits, parse_frame
 
 
 def bytes_to_hex(data: bytes) -> str:
@@ -12,55 +12,42 @@ def bytes_to_bitstring(data: bytes) -> str:
     return " ".join(f"{byte:08b}" for byte in data)
 
 
+def print_original_message(message):
+    print("=" * 72)
+    #print("\n")
+    print("Originalno sporočilo:")
+    print(message + " ")
+    print(type(message))
+    #print("\n")
+    print("=" * 72)
+    return message
+
+
 def print_frame_hex(frame: bytes) -> None:
     print(bytes_to_hex(frame))
 
 
 def print_frame_sections(frame: bytes) -> None:
-    payload_len = int.from_bytes(frame[8:10], byteorder="big")
-    payload_start = 10
-    payload_end = payload_start + payload_len
+    parsed = parse_frame(frame) # parse the frame to extract sections for display, better than slicing raw bytes 
 
     sections = {
-        "PREAMBLE": frame[0:4],
-        "SOF": frame[4:5],
-        "FRAME_TYPE": frame[5:6],
-        "SRC_ADDR": frame[6:7],
-        "DST_ADDR": frame[7:8],
-        "PAYLOAD_LEN": frame[8:10],
-        "PAYLOAD": frame[payload_start:payload_end],
-        "CRC32": frame[payload_end:payload_end + 4],
-        "EOF": frame[payload_end + 4:payload_end + 5],
+        "PREAMBLE":    parsed["preamble"],
+        "SOF":         parsed["sof"],
+        "FRAME_TYPE":  parsed["frame_type"],
+        "SRC_ADDR":    parsed["src_addr"],
+        "DST_ADDR":    parsed["dst_addr"],
+        "PAYLOAD_LEN": len(parsed["payload"]).to_bytes(2, byteorder="big"),
+        "PAYLOAD":     parsed["payload"],
+        "CRC32":       parsed["received_crc"],
+        "EOF":         parsed["eof"],
     }
 
     print("=" * 72)
     print("FRAME SECTIONS")
     print("=" * 72)
-
     for name, value in sections.items():
         print(f"{name:<12} | HEX: {bytes_to_hex(value):<40} | BITS: {bytes_to_bitstring(value)}")
-
     print("=" * 72)
-
-
-def print_parsed_frame(parsed: Dict) -> None:
-    print("=" * 72)
-    print("PARSED FRAME")
-    print("=" * 72)
-    print(f"{'Preamble':<20}: {bytes_to_hex(parsed['preamble'])}")
-    print(f"{'SOF':<20}: 0x{parsed['sof']:02X}")
-    print(f"{'Frame type':<20}: 0x{parsed['frame_type']:02X}")
-    print(f"{'Source address':<20}: 0x{parsed['src_addr']:02X}")
-    print(f"{'Destination address':<20}: 0x{parsed['dst_addr']:02X}")
-    print(f"{'Payload length':<20}: {parsed['payload_len']}")
-    print(f"{'Payload (hex)':<20}: {bytes_to_hex(parsed['payload'])}")
-    print(f"{'Payload (text)':<20}: {parsed['payload_text']}")
-    print(f"{'Received CRC32':<20}: 0x{parsed['received_crc']:08X}")
-    print(f"{'Calculated CRC32':<20}: 0x{parsed['calculated_crc']:08X}")
-    print(f"{'CRC OK':<20}: {parsed['crc_ok']}")
-    print(f"{'EOF':<20}: 0x{parsed['eof']:02X}")
-    print("=" * 72)
-
 
 def plot_frame_bits(frame: bytes, max_bits: int = 64) -> None:
     bits = frame_to_bits(frame)[:max_bits]
