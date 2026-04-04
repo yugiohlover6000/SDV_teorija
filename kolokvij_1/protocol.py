@@ -96,7 +96,7 @@ def hamming_encode_nibble(data_bits):
 
 # Apliciraj hamming_encode_nibble() na bit streamu
 
-def hamming_kodiraj(biti):
+def hamming_kodiraj_bistream(biti):
 
     while len(biti) % 4 != 0:
         biti = biti + [0]
@@ -107,7 +107,6 @@ def hamming_kodiraj(biti):
         nibble = biti[i:i+4]
         kodirani.extend(hamming_encode_nibble(nibble))
     return kodirani
-
 
 def error_simulation(coded_bits, pos):
     """Simulira bitno napako na podani poziciji (za testiranje)."""
@@ -180,4 +179,16 @@ def parse_frame(frame: bytes) -> Dict:
         "eof":            eof,
     }
 
- 
+def code_frame_with_hamming(frame: bytes) -> List[int]:
+    bits = frame_to_bits(frame)
+    return hamming_kodiraj_bistream(bits)
+
+
+message = "Niko Korošec M10141263 Slovenia"
+
+frame = build_frame(message)
+parsed = parse_frame(frame)
+coded = code_frame_with_hamming(frame)
+print(parsed)
+print("\n")
+print(coded[:64])

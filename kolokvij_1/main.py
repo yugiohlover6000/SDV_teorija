@@ -3,7 +3,8 @@ from visualisation import (
     bytes_to_hex,
     bytes_to_bitstring,
     print_frame_sections,
-    print_original_message
+    print_original_message,
+    print_hamming_coded_bits
     
 )
 
@@ -27,9 +28,7 @@ def main() -> None:
 
     
     print_frame_sections(frame)
-
-    print("/n")
-    print(bytes_to_bitstring(frame))
+    print_hamming_coded_bits(frame)
     
     #print_parsed_frame(parsed)
 

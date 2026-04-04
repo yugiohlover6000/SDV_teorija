@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from typing import Dict
 
-from protocol import frame_to_bits, parse_frame
+from protocol import frame_to_bits, parse_frame, hamming_kodiraj_bistream
 
 
 def bytes_to_hex(data: bytes) -> str:
@@ -74,6 +74,34 @@ def bits_to_nrz(bits: list[int]) -> list[int]:
     return [1 if bit == 1 else -1 for bit in bits]
 
 
+
+def print_hamming_coded_bits(frame: bytes) -> list:
+    bits = frame_to_bits(frame)
+    coded_bits = hamming_kodiraj_bistream(bits)
+
+    print("=" * 72)
+    print("HAMMING(7,4) KODIRANI BIT STREAM")
+    print("=" * 72)
+
+    # blok po blok prikaz
+    print(f"{'Blok':<6} | {'Orig (4b)':<10} | {'Kodiran (7b)':<14} | Paritetni biti")
+    print("-" * 72)
+    for i in range(0, len(coded_bits), 7):
+        blok = coded_bits[i:i+7]
+        orig = bits[i//7*4 : i//7*4+4]
+        blok_str = ''.join(map(str, blok))
+        orig_str = ''.join(map(str, orig))
+        p1, p2, _, p4, _, _, _ = blok
+        print(f"{i//7+1:<6} | {orig_str:<10} | {blok_str:<14} | p1={p1} p2={p2} p4={p4}")
+
+    # statistika
+    print(f"Original : {len(bits)} bitov")
+    print(f"Kodirano : {len(coded_bits)} bitov")
+    print(f"Blokov   : {len(coded_bits)//7}")
+    print(f"Overhead : {len(coded_bits) - len(bits)} bitov ({(len(coded_bits)/len(bits)-1)*100:.1f}%)")
+    print("=" * 72)
+
+    return coded_bits
 def plot_nrz(frame: bytes, max_bits: int = 64) -> None:
     bits = frame_to_bits(frame)[:max_bits]
     nrz_levels = bits_to_nrz(bits)
