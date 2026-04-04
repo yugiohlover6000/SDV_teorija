@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from protocol import build_frame, parse_frame
 from visualisation import (
     bytes_to_hex,
@@ -28,6 +29,13 @@ def main() -> None:
 
     plot_frame_bits(frame, max_bits=80)
     plot_nrz(frame, max_bits=80)
+=======
+from gui import main as gui_main
+
+
+def main():
+    gui_main()
+>>>>>>> 3341c60ba1d79c9d3070a6bf594f0a1d7886fb4a
 
 
 if __name__ == "__main__":
