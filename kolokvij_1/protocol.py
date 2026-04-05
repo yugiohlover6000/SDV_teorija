@@ -1,5 +1,7 @@
+import random
 import zlib
 from typing import Dict, List
+import math
 
 
 
@@ -44,20 +46,21 @@ def frame_to_bits(frame):
             bits.append((byte >> i) & 1)
     return bits
 
-#NEVEM KAJ TO DELA SPLOH
-""" 
-def bits_to_bytes(bits: List[int]) -> bytes:
-    if len(bits) % 8 != 0:
-        raise ValueError("Bit list length must be a multiple of 8.")
 
-    output = bytearray()
-
+def bits_to_bytes(bits: list) -> bytes:
+    # padding če ni večkratnik 8
+    while len(bits) % 8 != 0:
+        bits = bits + [0]
+    
+    result = []
     for i in range(0, len(bits), 8):
         byte = 0
-        for bit in bits[i:i + 8]:
-            
-    return output
-"""
+        for bit in bits[i:i+8]:
+            byte = (byte << 1) | bit
+        result.append(byte)
+    
+    return bytes(result)
+
 
 
 def nrz_encode(bits):
@@ -184,11 +187,11 @@ def code_frame_with_hamming(frame: bytes) -> List[int]:
     return hamming_kodiraj_bistream(bits)
 
 
-message = "Niko Korošec M10141263 Slovenia"
+def bpsk_modulate(bits):
+    # Fazni zamik 180 deg predstavlja 0, fazni zamik 0 deg predstavlja 1
+    return [1.0 if bit == 0 else -1.0 for bit in bits]
 
-frame = build_frame(message)
-parsed = parse_frame(frame)
-coded = code_frame_with_hamming(frame)
-print(parsed)
-print("\n")
-print(coded[:64])
+def awgn_noise(signal, snr_db):
+    snr_linear = 10 ** (snr_db / 10)
+    noise_std = math.sqrt(1 / (2 * snr_linear))
+    return [s + random.gauss(0, noise_std) for s in signal]
