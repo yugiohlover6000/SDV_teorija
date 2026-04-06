@@ -9,50 +9,47 @@
 
 ## 1. Uvod
 
-V okviru naloge pri predmetu Sistemi daljinskega vodenja smo zasnovali in implementirali poenostavljen komunikacijski sistem za prenos sporočila preko fizične plasti. Cilj naloge je bil prikazati celoten potek prenosa podatkov od oblikovanja sporočila na oddajni strani do rekonstrukcije in preverjanja pravilnosti sprejetega sporočila na sprejemni strani.
+<div align="justify">
+V okviru naloge pri predmetu Sistemi daljinskega vodenja smo izdelali poenostavljen komunikacijski sistem za prenos sporočila preko fizične plasti. Namen naloge je bil prikazati celoten potek prenosa podatkov, od priprave sporočila na oddajni strani do sprejema, rekonstrukcije in preverjanja pravilnosti na sprejemni strani.
 
-Sistem vključuje več zaporednih korakov. Besedilno sporočilo se najprej pretvori v bajtno obliko in vstavi v podatkovni okvir. Okvir vsebuje sinhronizacijska in naslovna polja, dolžino podatkovnega dela, uporabniške podatke ter CRC-32 kontrolno vsoto za zaznavanje napak. Tako pripravljen okvir se pretvori v bitni tok, ki se nato zaščiti s Hammingovim kodiranjem. Kodirani biti se modulirajo z BPSK modulacijo, signal pa se pri prenosu skozi kanal obremeni z dodatnim šumom.
+Najprej se besedilno sporočilo pretvori v bajte in vstavi v podatkovni okvir. Okvir vsebuje sinhronizacijska in naslovna polja, dolžino podatkovnega dela, uporabniške podatke ter CRC-32 kontrolno vsoto za zaznavanje napak. Nato se okvir pretvori v bitni tok, ta pa se dodatno zaščiti s Hammingovim kodiranjem. Kodirani biti se modulirajo z BPSK modulacijo, signalu pa se za simulacijo realnega kanala doda še šum.
 
-Na sprejemni strani se nad prejetim signalom izvede sinhronizacija s Costasovo zanko, nato BPSK demodulacija, Hammingovo dekodiranje in popravljanje enobitnih napak ter rekonstrukcija izvornega okvirja. Na koncu se preveri pravilnost sprejetega okvira z izračunom CRC-32 kontrolne vsote in iz okvirja izlušči izvorno sporočilo.
+Na sprejemni strani se najprej izvede sinhronizacija s Costasovo zanko, nato BPSK demodulacija in Hammingovo dekodiranje, s katerim lahko popravimo enobitne napake. Iz tako dobljenih podatkov se ponovno sestavi okvir, na koncu pa se s CRC-32 preveri, ali je bil prenos uspešen, in izlušči sprejeto sporočilo.
+</div>
+
+<p align="center"> <img src="Slike/OSI.gif" width="500"/> </p>
+
 
 ## 2. Uporabljene metode
 
-V implementaciji komunikacijskega sistema so uporabljene naslednje metode:
+Pri implementaciji sistema smo uporabili več osnovnih metod s področja digitalnih komunikacij:
 
-- **CRC-32** za zaznavanje napak v zaščitenem delu okvirja
-- **Hammingovo kodiranje Hamming(7,4)** za kanalsko kodiranje in popravljanje enobitnih napak
-- **BPSK (Binary Phase Shift Keying)** za digitalno modulacijo
-- **AWGN (Additive White Gaussian Noise)** za simulacijo šuma v kanalu
-- **Costasova zanka** za osnovno fazno sinhronizacijo na sprejemni strani
-- **NRZ predstavitev bitov** kot pomožni prikaz signalnega nivoja v vizualizaciji
+- **CRC-32** za zaznavanje napak
+- **Hamming(7,4)** za popravljanje enobitnih napak
+- **BPSK** za modulacijo bitov
+- **AWGN** za simulacijo šuma v kanalu
+- **Costasovo** zanko za fazno sinhronizacijo sprejema
+- **NRZ** prikaz za lažjo predstavitev bitnega toka
 
 ## 3. Zgradba programa
 
-Program je razdeljen na štiri glavne bloke, od katerih vsak pokriva določen del komunikacijskega sistema.
+Program je razdeljen na štiri module, ki skupaj pokrivajo celoten potek komunikacije, vse od oddaje do sprejema in prikaza rezultatov.
 
 ### 3.1 `main.py`
 
-Datoteka `main.py` predstavlja glavni potek izvajanja programa. Njena naloga je povezovanje vseh ostalih modulov v smiselno zaporedje. V njej se definira izvorno sporočilo, kliče sestava okvirja, izvede kodiranje in modulacija na oddajni strani ter nato demodulacija, dekodiranje in rekonstrukcija na sprejemni strani.
-
-Ta datoteka torej ne vsebuje bistvene implementacije protokola, temveč predstavlja organizacijsko ogrodje celotnega workflowa.
+Datoteka `main.py` vsebuje glavni potek programa. V njej določimo vhodno sporočilo, nato pa po vrsti izvedemo vse korake oddajne in sprejemne strani. Ta datoteka torej povezuje ostale module in skrbi za pravilen vrstni red izvajanja.
 
 ### 3.2 `transmitter.py`
 
-Datoteka `transmitter.py` vsebuje glavno logiko oddajne strani in definicijo komunikacijskega protokola. V njej so določene konstante okvirja, funkcije za pretvorbo podatkov med različnimi oblikami ter funkcije za sestavo okvirja, izračun CRC-32, pretvorbo okvirja v bitni tok, Hammingovo kodiranje, BPSK modulacijo in dodajanje šuma.
-
-Gre za osrednji modul, ki določa strukturo prenosa podatkov.
+Datoteka `transmitter.py` vsebuje glavni del oddajne strani. V njej so definirane konstante okvirja ter funkcije za sestavo okvirja, izračun CRC-32, pretvorbo okvirja v bitni tok, Hammingovo kodiranje, BPSK modulacijo in dodajanje šuma.
 
 ### 3.3 `receiver.py`
 
-Datoteka `receiver.py` vsebuje funkcije sprejemne strani. Sem sodijo Costasova zanka za osnovno fazno sinhronizacijo, BPSK demodulacija, Hammingovo dekodiranje in zaznava oziroma popravljanje enobitnih napak v posameznih blokih.
-
-Ta modul skrbi za to, da se iz prejetega in potencialno poškodovanega signala ponovno pridobijo pravilni podatki.
+Datoteka `receiver.py` vsebuje funkcije sprejemne strani. Sem spadajo Costasova zanka, BPSK demodulacija ter Hammingovo dekodiranje in popravljanje enobitnih napak. Namen tega modula je, da iz prejetega signala ponovno dobi pravilne podatke.
 
 ### 3.4 `display.py`
 
-Datoteka `display.py` vsebuje pomožne funkcije za izpis in razlago vmesnih korakov izvajanja. Namenjena je prikazu okvirja v šestnajstiški in bitni obliki, prikazu Hammingovega kodiranja, BPSK modulacije, delovanja sprejemne strani ter končne rekonstrukcije okvirja.
-
-Ta modul ni ključen za samo delovanje komunikacijskega sistema, je pa zelo uporaben za analizo, preverjanje pravilnosti in razumevanje posameznih faz prenosa.
+Datoteka `display.py` vsebuje pomožne funkcije za izpis rezultatov v terminal. Uporablja se za prikaz okvirja, bitnega toka, Hammingovega kodiranja, modulacije, sprejemne strani in končne rekonstrukcije sporočila. Ta del ni ključen za samo delovanje sistema, je pa zelo uporaben za razlago in pregled nad posameznimi koraki.
 
 ## 4. Celoten workflow sistema
 

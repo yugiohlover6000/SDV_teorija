@@ -7,4 +7,4 @@ Sistemi daljinskega vodenja
 - Jakob Sadar – jakob.sadar@student.um.si  
 
 ## Kolokvij 1
-- [Dokumentacija](./kolokvij_1/Documentation.md)
+- [Dokumentacija](./kolokvij_1/documentation.md)
