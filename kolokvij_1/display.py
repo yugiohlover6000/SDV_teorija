@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from typing import Dict
-from kolokvij_1.transmitter import (
+from transmitter import (
     bits_to_bytes,
     frame_to_bits, 
     parse_frame,
@@ -8,8 +8,7 @@ from kolokvij_1.transmitter import (
     bpsk_modulate, 
     awgn_noise
 )
-
-from kolokvij_1.receiver import(
+from receiver import(
     costas_loop,
     bpsk_demodulate,
     hamming_decode_nibble,

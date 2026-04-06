@@ -19,12 +19,12 @@ def costas_loop(noisy_symbols: list, alpha: float = 0.05) -> list:
 
     return synced
 
-def bpsk_demodulate(symbols):
 
+def bpsk_demodulate(symbols):
     return [0 if symbol >= 0 else 1 for symbol in symbols]
 
+
 def hamming_decode_nibble(coded_bits):
-  
     p1, p2, d1, p4, d2, d3, d4 = coded_bits
 
     

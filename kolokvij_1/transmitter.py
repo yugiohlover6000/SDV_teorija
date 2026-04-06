@@ -3,8 +3,6 @@ import zlib
 from typing import Dict, List
 import math
 
-
-
 #=======================================================================
 # KONSTANTE OKVIRJA
 #=======================================================================    
@@ -60,7 +58,6 @@ def bits_to_bytes(bits: list) -> bytes:
         result.append(byte)
     
     return bytes(result)
-
 
 
 def nrz_encode(bits):
