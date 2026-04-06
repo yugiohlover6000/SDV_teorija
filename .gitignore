@@ -6,4 +6,16 @@ __pycache__/
 .vscode/browse.vc.db-wal
 .vscode/*.db
 .vscode/*.db-shm
-.vscode/*.db-wal
+.vscode/*.db-wal.vscode/
+.vscode/
+.vscode/
+kolokvij_1/.vscode/
+__pycache__/
+*.pyc
+kolokvij_1/.vscode/
+__pycache__/
+*.pyc
+.vscode/
+kolokvij_1/.vscode/
+__pycache__/
+*.pyc

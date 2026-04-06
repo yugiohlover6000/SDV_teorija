@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 from typing import Dict
-
-from protocol import (
+from kolokvij_1.transmitter import (
     bits_to_bytes,
     frame_to_bits, 
     parse_frame,
@@ -10,7 +9,7 @@ from protocol import (
     awgn_noise
 )
 
-from sprejem import(
+from kolokvij_1.receiver import(
     costas_loop,
     bpsk_demodulate,
     hamming_decode_nibble,

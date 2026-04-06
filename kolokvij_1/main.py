@@ -1,5 +1,5 @@
-from protocol import build_frame, parse_frame
-from visualisation import (
+from kolokvij_1.transmitter import build_frame, parse_frame
+from kolokvij_1.display import (
     bytes_to_hex,
     bytes_to_bitstring,
     print_frame_sections,
@@ -9,10 +9,7 @@ from visualisation import (
     print_costas,
     print_demodulated_bpsk,
     print_decoded_hamming,
-    print_received_frame
-    
-
-    
+    print_received_frame    
 )
 
 
