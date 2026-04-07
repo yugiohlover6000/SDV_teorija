@@ -17,12 +17,14 @@ Najprej se besedilno sporočilo pretvori v bajte in vstavi v podatkovni okvir. O
 Na sprejemni strani se najprej izvede sinhronizacija s Costasovo zanko, nato BPSK demodulacija in Hammingovo dekodiranje, s katerim lahko popravimo enobitne napake. Iz tako dobljenih podatkov se ponovno sestavi okvir, na koncu pa se s CRC-32 preveri, ali je bil prenos uspešen, in izlušči sprejeto sporočilo.
 </div>
 
-<p align="center"> <img src="Slike/OSI.gif" width="500"/> </p>
+<p align="center"> <img src="assets/OSI.gif" width="500"/> </p>
 
 
 ## 2. Uporabljene metode
 
+<div align="justify">
 Pri implementaciji sistema smo uporabili več osnovnih metod s področja digitalnih komunikacij:
+</div>
 
 - **CRC-32** za zaznavanje napak
 - **Hamming(7,4)** za popravljanje enobitnih napak
@@ -30,6 +32,8 @@ Pri implementaciji sistema smo uporabili več osnovnih metod s področja digital
 - **AWGN** za simulacijo šuma v kanalu
 - **Costasovo** zanko za fazno sinhronizacijo sprejema
 - **NRZ** prikaz za lažjo predstavitev bitnega toka
+
+<div align="justify">
 
 ## 3. Zgradba programa
 
@@ -50,6 +54,7 @@ program `receiver.py` vsebuje funkcije sprejemne strani. Sem spadajo Costasova z
 ### 3.4 `display.py`
 
 `display.py` vsebuje pomožne funkcije za izpis rezultatov v terminal. Uporablja se za prikaz okvirja, bitnega toka, Hammingovega kodiranja, modulacije, sprejemne strani in končne rekonstrukcije sporočila. Ta del ni ključen za samo delovanje sistema, je pa zelo uporaben za razlago in pregled nad posameznimi koraki.
+</div>
 
 ## 4. Celoten workflow sistema
 
@@ -73,6 +78,7 @@ besedilo
 ```
 
 ## 5. Struktura podatkovnega okvirja
+<div align="justify">
 
 Za prenos sporočila smo v programu definirali lasten podatkovni okvir. Vanj poleg uporabniških podatkov dodamo še sinhronizacijska, naslovna in kontrolna polja. Takšna struktura omogoča, da sprejemna stran prepozna začetek in konec okvirja, določi pošiljatelja in sprejemnika ter na koncu preveri pravilnost prenosa.
 
@@ -133,17 +139,25 @@ Na ta del se doda CRC, na začetek `PREAMBLE` in `SOF`, na konec pa `EOF`. Tako 
 
 CRC-32 se izračuna nad zaščitenim delom okvirja in služi zaznavanju napak. Implementiran je s funkcijo `calculate_crc32(data)`.
 
+<p align="center"> <img src="assets/crc.png" width="500"/> </p>
+
 Na sprejemni strani se CRC ponovno izračuna in primerja s prejetim. Če se vrednosti ujemata, je okvir najverjetneje pravilen.
 
 ### 6.4 Pretvorba okvirja v bitni tok
 
 Okvir v bajtni obliki se pretvori v bitni tok s funkcijo `frame_to_bits(frame)`. Vsak bajt se razbije na 8 bitov (MSB → LSB).
 
+<p align="center"> <img src="assets/msb_to_lsb.png" width="500"/> </p>
+
+
 To je potrebno, ker nadaljnji koraki (Hamming, modulacija) delujejo na nivoju bitov.
 
 ### 6.5 Hamming(7,4) kodiranje
 
 Po pretvorbi okvirja v bitni tok sledi Hammingovo kodiranje Hamming(7,4). Namen tega koraka je povečati odpornost sistema proti napakam, ki nastanejo med prenosom skozi kanal. Ta koda omogoča zaznavo in popravljanje enobitne napake v vsakem 7-bitnem bloku.
+
+<p align="center"> <img src="assets/hamming_1.png" width="500"/> </p>
+
 
 Pri Hamming(7,4) se vsakih 4 podatkovne bite razširi v 7-bitni blok, kjer se dodajo še 3 paritetni biti. V našem programu je razporeditev naslednja:
 
@@ -173,6 +187,9 @@ bit 0 se preslika v simbol +1.0
 bit 1 se preslika v simbol -1.0
 ```
 
+<p align="center"> <img src="assets/bpsk.webp" width="500"/> </p>
+
+
 To izvaja funkcija bpsk_modulate(bits). Na ta način dobimo signal, ki ga lahko “pošljemo” skozi kanal.
 
 ### 6.7 Dodajanje šuma (AWGN)
@@ -180,6 +197,9 @@ To izvaja funkcija bpsk_modulate(bits). Na ta način dobimo signal, ki ga lahko 
 Na signal se doda šum z modelom AWGN, ki simulira realen kanal. To izvedemo s funkcijo `awgn_noise(signal, snr_db)`.
 
 Šum povzroči napake, kar omogoča testiranje delovanja Hammingovega kodiranja in CRC preverjanja.
+
+<p align="center"> <img src="assets/AWGN.jpg" width="500"/> </p>
+
 
 ## 7. Sprejemna stran
 
@@ -398,3 +418,4 @@ Te funkcije služijo predvsem kot vizualna pomoč pri razlagi delovanja sistema.
 V nalogi smo izdelali poenostavljen komunikacijski sistem, s katerim smo prikazali celoten potek prenosa podatkov preko fizične plasti. Sistem zajema sestavo okvirja, CRC zaščito, Hammingovo kodiranje, BPSK modulacijo, dodajanje šuma ter sprejemni del z demodulacijo, dekodiranjem in preverjanjem pravilnosti prenosa.
 
 S projektom smo bolje razumeli razliko med zaznavanjem napak in popravljanjem napak ter osnovni princip delovanja digitalnega komunikacijskega sistema. Program je zaradi razdelitve na več modulov pregleden, hkrati pa dovolj enostaven, da se lahko posamezne korake jasno analizira in razloži.
+</div>
