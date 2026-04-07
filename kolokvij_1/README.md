@@ -393,29 +393,157 @@ Najprej se sestavi okvir, izvede kodiranje, modulacija in dodajanje šuma. Nato 
 
 Funkcija sama ne vsebuje bistvene logike posameznih metod, temveč skrbi za pravilno zaporedje izvajanja in povezovanje vseh modulov.
 
-### 8.4 Funkcije modula `display.py`
+### 9. Vizualizacija
+<div align="justify">
 
-program `display.py` vsebuje funkcije za prikaz rezultatov v terminalu. Namenjen je lažjemu razumevanju in analizi delovanja sistema, ni pa nujen za samo delovanje prenosa.
+Za boljšo preglednost delovanja sistema smo pripravili tudi grafični uporabniški vmesnik, ki omogoča interaktivni prikaz celotnega komunikacijskega poteka. Namen vizualizacije ni samo lepši prikaz rezultatov, ampak predvsem lažje razumevanje posameznih korakov oddajne in sprejemne strani.
 
-Večina funkcij v tem modulu izpisuje podatke v različnih oblikah (hex, biti, blokovna struktura) ter prikazuje posamezne korake, kot so Hammingovo kodiranje, BPSK modulacija in dekodiranje.
+<p align="center"> <img src="assets/gui.png" width="500"/> </p>
 
-***Primeri funkcij***
-- **bytes_to_hex()** – pretvori bajte v hex zapis
-- **bytes_to_bitstring()** – pretvori bajte v bitni zapis
-- **print_frame_hex()** – izpiše okvir v hex obliki
-- **print_frame_sections()** – razdeli okvir na polja in jih prikaže
-- **print_hamming_coded_bits()** – prikaže Hammingove bloke
-- **print_bpsk()** – prikaže modulacijo in vpliv šuma
-- **print_costas()** – prikaže delovanje Costasove zanke
-- **print_decoded_hamming()** – prikaže popravljanje napak
-- **print_received_frame()** – prikaže rekonstruiran okvir
+V grafičnem vmesniku lahko uporabnik vnese vhodne podatke, kot so ime, priimek, vpisna številka, država in izbrani SNR, nato pa zažene celoten potek prenosa. Sistem prikaže sestavljeno sporočilo, podatkovni okvir, število bitov, število Hammingovih bitov, število zaznanih napak po demodulaciji, število popravljenih blokov ter končno sprejeto sporočilo.
 
-Te funkcije služijo predvsem kot vizualna pomoč pri razlagi delovanja sistema.
+Poleg tekstovnega prikaza GUI vsebuje tudi več grafov, s katerimi lažje opazujemo obnašanje sistema:
+
+- prikaz originalnih BPSK simbolov,
+- primerjava zasumljenih in sinhroniziranih simbolov,
+- primerjava originalnih in dekodiranih bitov,
+- graf BER v odvisnosti od SNR,
+- primerjalni graf med osnovno BPSK shemo in poenostavljeno OFDM shemo.
+
+</div>
+
+## 10. Testiranje
+<div align="justify">
+
+Za preverjanje delovanja komunikacijske sheme smo uporabili dva glavna pristopa testiranja:
+
+**BER test**, s katerim opazujemo vpliv šuma na pravilnost prenosa,
+**primerjavo z OFDM modulacijo,** s katero ocenimo razliko med enostavnejšo enonosilčno shemo in poenostavljeno večnosilčno shemo.
+
+Namen testiranja ni bil le preveriti, ali sistem deluje, ampak tudi ugotoviti, kako se obnaša pri različnih nivojih šuma in kako robustna je izbrana modulacijska shema. Poseben poudarek je na odvisnosti med `SNR` in `BER`, saj ta zveza neposredno pove, kako zanesljiv je prenos skozi kanal.
+
+Pri testiranju smo uporabili poenostavljen model komunikacijskega kanala z dodatkom `AWGN` šuma. Ta model ne predstavlja vseh pojavov realnega kanala, je pa zelo primeren za osnovno analizo odpornosti na napake, saj jasno pokaže vpliv šuma na demodulacijo in rekonstrukcijo bitnega toka.
+
+</div>
+
+### 10.1 BER test
+
+<div align="justify">
+
+#### Namen BER testa
+
+`BER` oziroma Bit Error Rate predstavlja razmerje med številom napačno sprejetih bitov in skupnim številom vseh poslanih bitov. To je ena izmed najpomembnejših mer pri vrednotenju digitalnih komunikacijskih sistemov, saj neposredno pove, kako uspešen je prenos informacij skozi kanal.
+
+Matematično ga zapišemo kot:
+
+```
+BER = število napačnih bitov / skupno število vseh bitov
+```
+
+BER test smo uporabili zato, ker z njim lahko zelo jasno ocenimo, kako občutljiv je naš sistem na šum. Če je BER velik, pomeni, da sprejemnik veliko bitov sprejme napačno. Če je BER majhen, pomeni, da sistem deluje zanesljivo. Pri dovolj velikem `SNR` mora BER začeti padati proti zelo majhnim vrednostim.
+
+#### Uporabljeni pristop
+
+Za testiranje smo pripravili ločen program, v katerem ne obravnavamo celotnega okvirja, temveč osnovni prenos bitov skozi kanal z uporabo BPSK modulacije. Tak pristop je poenostavljen, vendar zelo uporaben, saj omogoča jasno in neposredno analizo vpliva šuma na prenos.
+
+Postopek testa je naslednji:
+
+1. generiramo naključne bite,
+2. bite moduliramo z BPSK,
+3. moduliranemu signalu dodamo AWGN šum,
+4. signal demoduliramo nazaj v bite,
+5. primerjamo poslane in sprejete bite,
+6. izračunamo BER,
+7. celoten postopek ponovimo za več različnih vrednosti SNR.
+
+Na ta način dobimo graf BER v odvisnosti od SNR, iz katerega lahko ocenimo, pri katerih pogojih sistem deluje dobro.
+
+#### Funkcije uporabljene v BER testu
+
+V programu za BER test smo uporabili naslednje funkcije:
+
+`generate_bits(num_bits)`
+Funkcija generira seznam naključnih bitov 0 in 1. Ti biti predstavljajo vhodne podatke, ki jih želimo prenesti skozi komunikacijski kanal.
+
+`bpsk_modulate(bits)`
+Ta funkcija, prevzeta iz modula `transmitter.py`, izvaja BPSK modulacijo. Vsak bit preslika v simbol:
+
+```
+0 -> +1
+1 -> -1
+```
+
+Tako dobimo signal, pripravljen za prenos skozi kanal.
+
+`awgn_noise(signal, snr_db)`
+Fugnkcija doda moduluiranemu signalu beli Gaussov šum. Nivo šuma je določen z izbrano vrednostjo `SNR`. Ta funkcija simulira neidealne pogoje prenosa.
+
+`bpsk_demodulate(symbols)`
+Funkcija iz modula `receiver.py` sprejete simbole pretvori nazaj v bite. Odločitev temelji na predznaku simbola:
+
+- simbol večji ali enak 0 pomeni bit 0,
+- simbol manjši od 0 pomeni bit 1.
 
 
-## 9. Zaključek
+`calculate_ber(transmitted_bits, received_bits)`
+Funkcija primerja poslani in sprejeti bitni tok ter prešteje število razlik. Nato izračuna razmerje med številom napak in številom vseh bitov.
 
-V nalogi smo izdelali poenostavljen komunikacijski sistem, s katerim smo prikazali celoten potek prenosa podatkov preko fizične plasti. Sistem zajema sestavo okvirja, CRC zaščito, Hammingovo kodiranje, BPSK modulacijo, dodajanje šuma ter sprejemni del z demodulacijo, dekodiranjem in preverjanjem pravilnosti prenosa.
+`ber_simulation(num_bits, snr_values)`
+Gre za glavno funkcijo testa. Za vsako vrednost `SNR` izvede celoten prenosni cikel in izračuna `BER`.
 
-S projektom smo bolje razumeli razliko med zaznavanjem napak in popravljanjem napak ter osnovni princip delovanja digitalnega komunikacijskega sistema. Program je zaradi razdelitve na več modulov pregleden, hkrati pa dovolj enostaven, da se lahko posamezne korake jasno analizira in razloži.
+`plot_graph(snr_values, ber_results)`
+Funkcija rezultate prikaže na grafu. Na osi x je SNR [dB], na osi y pa BER. Ker je BER pogosto zelo majhen, uporabimo logaritemsko skalo na osi y.
+
+#### Delovanje testa
+
+Pri vsakem testu smo določili število poslanih bitov, v našem primeru na primer `10000`, in seznam vrednosti `SNR`, na primer:
+
+```
+[-2, 0, 2, 4, 6, 8, 10]
+```
+
+Za vsako od teh vrednosti se izvede simulacija prenosa in izračuna nova vrednost `BER`. Tako dobimo več točk, ki jih nato povežemo v graf.
+
+Na podlagi dobljenih rezultatov lahko opazimo tipično lastnost digitalnih komunikacijskih sistemov:
+
+- pri nizkem `SNR` je veliko šuma, zato je `BER` velik,
+- pri višjem `SNR` je vpliv šuma manjši, zato `BER` hitro pada.
+
+To pomeni, da komunikacijska shema pri dovolj velikem SNR postane odporna na napake.
+
+#### Analiza rezultatov
+
+Pri izvedenem testu smo dobili tipičen padajoč potek BER v odvisnosti od SNR. Rezultati so pokazali, da je pri nizkih vrednostih SNR število napak veliko, nato pa se z naraščanjem SNR močno zmanjša.
+
+Primer rezultatov:
+
+```
+SNR = -2 dB   BER = 0.1321
+SNR =  0 dB   BER = 0.0771
+SNR =  2 dB   BER = 0.0386
+SNR =  4 dB   BER = 0.0103
+SNR =  6 dB   BER = 0.0027
+SNR =  8 dB   BER = 0.0002
+SNR = 10 dB   BER = 0.0
+```
+
+Iz teh rezultatov vidimo, da se sistem pri nizkih `SNR` obnaša precej slabo, saj je delež napačno sprejetih bitov velik. Ko pa `SNR` preseže približno `6 dB`, začne biti BER že zelo majhen. Pri `8 dB` je skoraj zanemarljiv, pri `10 dB` pa v izvedeni simulaciji na vzorcu 10000 bitov ni bilo zaznanih napak.
+
+Pomembno je poudariti, da vrednost `BER = 0.0` ne pomeni, da sistem v absolutnem smislu nikoli ne naredi napake, temveč le, da v konkretnem testu na izbranem številu bitov nismo zaznali nobene napake.
+
+### 10.2 OFDM modulacija
+
+
+## 11. Zaključek
+
+V nalogi smo izdelali poenostavljen komunikacijski sistem, s katerim smo prikazali celoten potek prenosa podatkov skozi fizično plast. Sistem vključuje sestavo podatkovnega okvirja, zaščito s CRC-32, Hammingovo kodiranje, BPSK modulacijo, dodajanje šuma, sinhronizacijo na sprejemni strani, demodulacijo, dekodiranje ter končno preverjanje pravilnosti sprejetega okvirja.
+
+S pomočjo projekta smo bolje razumeli osnovne gradnike digitalnih komunikacijskih sistemov in razliko med zaznavanjem napak ter popravljanjem napak. CRC-32 omogoča zaznavanje napak v okviru, Hamming(7,4) pa popravljanje enobitnih napak že med samim sprejemom. BPSK modulacija se je izkazala kot preprosta in primerna izbira za osnovno implementacijo fizične plasti.
+
+Pomemben del naloge je predstavljalo tudi testiranje. Z BER analizo smo pokazali, kako se z naraščanjem razmerja signal-šum zmanjšuje število napačno sprejetih bitov. Ugotovili smo, da sistem pri našem modelu kanala postane dovolj odporen na napake približno od 6 dB naprej, pri višjih vrednostih pa je prenos zelo zanesljiv.
+
+V drugem delu testiranja smo osnovno BPSK shemo primerjali še s poenostavljeno OFDM-BPSK modulacijo. Primerjava je pokazala, da v našem poenostavljenem AWGN kanalu OFDM ni dosegel boljšega BER od osnovne BPSK sheme. Kljub temu smo skozi ta del bolje razumeli razliko med enonosilčnim in večnosilčnim prenosom ter spoznali, da se prednosti OFDM pokažejo predvsem v zahtevnejših kanalih.
+
+Program je zaradi razdelitve na več modulov pregleden in dovolj enostaven, da omogoča analizo posameznih korakov, hkrati pa dovolj razširljiv za nadaljnje izboljšave. V prihodnje bi bilo mogoče sistem nadgraditi z bolj realističnim modelom kanala, uvedbo cikličnega prefiksa pri OFDM, zahtevnejšo sinhronizacijo ter naprednejšimi modulacijskimi postopki.
+
 </div>

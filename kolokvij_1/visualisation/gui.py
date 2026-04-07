@@ -2,6 +2,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
 import math
+import random
+import sys
+import os
+import numpy as np
 
 try:
     import matplotlib
@@ -19,6 +23,7 @@ from transmitter import (
     hamming_kodiraj_bistream,
     bpsk_modulate,
     awgn_noise,
+    bits_to_bytes,
 )
 from receiver import (
     costas_loop,
@@ -28,11 +33,128 @@ from receiver import (
 from visualisation.display import bytes_to_hex, bytes_to_bitstring
 
 
+def generate_bits(num_bits):
+    bits = []
+    for _ in range(num_bits):
+        bits.append(random.randint(0, 1))
+    return bits
+
+
+def calculate_ber(transmitted_bits, received_bits):
+    errors = 0
+    for tx, rx in zip(transmitted_bits, received_bits):
+        if tx != rx:
+            errors += 1
+    return errors / len(transmitted_bits) if transmitted_bits else 0
+
+
+def run_simple_ber_test(num_bits, snr_values):
+    ber_results = []
+
+    for snr_db in snr_values:
+        transmitted_bits = generate_bits(num_bits)
+        transmitted_symbols = bpsk_modulate(transmitted_bits)
+        received_symbols = awgn_noise(transmitted_symbols, snr_db)
+        received_bits = bpsk_demodulate(received_symbols)
+
+        ber = calculate_ber(transmitted_bits, received_bits)
+        ber_results.append(ber)
+
+    return ber_results
+
+
+def bits_to_qpsk(bits):
+    symbols = []
+
+    bits_copy = bits[:]
+    if len(bits_copy) % 2 != 0:
+        bits_copy.append(0)
+
+    for i in range(0, len(bits_copy), 2):
+        b1 = bits_copy[i]
+        b2 = bits_copy[i + 1]
+
+        if b1 == 0 and b2 == 0:
+            symbols.append(1 + 1j)
+        elif b1 == 0 and b2 == 1:
+            symbols.append(-1 + 1j)
+        elif b1 == 1 and b2 == 1:
+            symbols.append(-1 - 1j)
+        else:
+            symbols.append(1 - 1j)
+
+    return np.array(symbols)
+
+
+def qpsk_to_bits(symbols):
+    bits = []
+
+    for s in symbols:
+        if s.real > 0 and s.imag > 0:
+            bits.extend([0, 0])
+        elif s.real < 0 and s.imag > 0:
+            bits.extend([0, 1])
+        elif s.real < 0 and s.imag < 0:
+            bits.extend([1, 1])
+        else:
+            bits.extend([1, 0])
+
+    return bits
+
+
+def awgn_noise_complex(signal, snr_db):
+    signal = np.array(signal, dtype=complex)
+    snr_linear = 10 ** (snr_db / 10)
+    signal_power = np.mean(np.abs(signal) ** 2)
+    noise_power = signal_power / snr_linear
+
+    noise = np.sqrt(noise_power / 2) * (
+        np.random.randn(len(signal)) + 1j * np.random.randn(len(signal))
+    )
+
+    return signal + noise
+
+
+def run_simple_ofdm_test(num_bits, snr_values, num_subcarriers=64):
+    ber_results = []
+
+    if num_bits % 2 != 0:
+        num_bits += 1
+
+    for snr_db in snr_values:
+        transmitted_bits = generate_bits(num_bits)
+        transmitted_symbols = bits_to_qpsk(transmitted_bits)
+
+        received_symbols_all = []
+
+        for i in range(0, len(transmitted_symbols), num_subcarriers):
+            block = transmitted_symbols[i:i + num_subcarriers]
+            original_len = len(block)
+
+            if len(block) < num_subcarriers:
+                padding = np.zeros(num_subcarriers - len(block), dtype=complex)
+                block = np.concatenate((block, padding))
+
+            ofdm_time_signal = np.fft.ifft(block)
+            noisy_signal = awgn_noise_complex(ofdm_time_signal, snr_db)
+            received_block = np.fft.fft(noisy_signal)
+
+            received_symbols_all.extend(received_block[:original_len])
+
+        received_bits = qpsk_to_bits(received_symbols_all)
+        received_bits = received_bits[:len(transmitted_bits)]
+
+        ber = calculate_ber(transmitted_bits, received_bits)
+        ber_results.append(ber)
+
+    return ber_results
+
+
 class CommunicationGUI:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("SDV – Komunikacijska shema (BPSK / Hamming / CRC)")
-        self.root.geometry("1400x900")
+        self.root.title("SDV – Komunikacijska shema (BPSK / Hamming / CRC / BER / OFDM)")
+        self.root.geometry("1500x950")
 
         self._build_state()
         self._build_layout()
@@ -44,6 +166,11 @@ class CommunicationGUI:
         self.drzava_var = tk.StringVar(value="Slovenija")
         self.snr_var = tk.DoubleVar(value=5.0)
         self.max_points_var = tk.IntVar(value=80)
+        self.test_bits_var = tk.IntVar(value=10000)
+
+        self.ber_snr_values = [-2, 0, 2, 4, 6, 8, 10]
+        self.ber_results = []
+        self.ofdm_results = []
 
         self.payload_text = ""
         self.frame = b""
@@ -98,10 +225,15 @@ class CommunicationGUI:
         ttk.Label(form, text="Št. točk na grafu").grid(row=1, column=2, sticky="w", padx=4, pady=4)
         ttk.Spinbox(form, from_=20, to=300, increment=10, textvariable=self.max_points_var, width=10).grid(row=1, column=3, padx=4, pady=4)
 
-        ttk.Button(form, text="Zaženi celoten potek", command=self.run_pipeline).grid(row=1, column=6, padx=6, pady=4)
-        ttk.Button(form, text="Počisti", command=self.clear_output).grid(row=1, column=7, padx=6, pady=4)
+        ttk.Label(form, text="BER test bits").grid(row=1, column=4, sticky="w", padx=4, pady=4)
+        ttk.Spinbox(form, from_=1000, to=200000, increment=1000, textvariable=self.test_bits_var, width=12).grid(row=1, column=5, padx=4, pady=4)
 
-        for i in range(8):
+        ttk.Button(form, text="Zaženi celoten potek", command=self.run_pipeline).grid(row=1, column=6, padx=6, pady=4)
+        ttk.Button(form, text="BER test", command=self.run_ber_test).grid(row=1, column=7, padx=6, pady=4)
+        ttk.Button(form, text="OFDM test", command=self.run_ofdm_test).grid(row=1, column=8, padx=6, pady=4)
+        ttk.Button(form, text="Počisti", command=self.clear_output).grid(row=1, column=9, padx=6, pady=4)
+
+        for i in range(10):
             form.columnconfigure(i, weight=1)
 
     def _build_tables(self, parent: ttk.Frame) -> None:
@@ -111,9 +243,12 @@ class CommunicationGUI:
         self.summary_tab = ttk.Frame(notebook)
         self.frame_tab = ttk.Frame(notebook)
         self.rx_tab = ttk.Frame(notebook)
+        self.analysis_tab = ttk.Frame(notebook)
+
         notebook.add(self.summary_tab, text="Povzetek")
         notebook.add(self.frame_tab, text="Okvir")
         notebook.add(self.rx_tab, text="Sprejem")
+        notebook.add(self.analysis_tab, text="Analiza")
 
         self.summary_box = ScrolledText(self.summary_tab, wrap="word", font=("Courier New", 10))
         self.summary_box.pack(fill="both", expand=True)
@@ -124,11 +259,15 @@ class CommunicationGUI:
         self.rx_box = ScrolledText(self.rx_tab, wrap="word", font=("Courier New", 10))
         self.rx_box.pack(fill="both", expand=True)
 
+        self.analysis_box = ScrolledText(self.analysis_tab, wrap="word", font=("Courier New", 10))
+        self.analysis_box.pack(fill="both", expand=True)
+
     def _build_plots(self, parent: ttk.Frame) -> None:
-        self.figure = Figure(figsize=(8, 8), dpi=100)
-        self.ax1 = self.figure.add_subplot(311)
-        self.ax2 = self.figure.add_subplot(312)
-        self.ax3 = self.figure.add_subplot(313)
+        self.figure = Figure(figsize=(8, 10), dpi=100)
+        self.ax1 = self.figure.add_subplot(411)
+        self.ax2 = self.figure.add_subplot(412)
+        self.ax3 = self.figure.add_subplot(413)
+        self.ax4 = self.figure.add_subplot(414)
         self.figure.tight_layout(pad=2.0)
 
         self.canvas = FigureCanvasTkAgg(self.figure, master=parent)
@@ -141,18 +280,25 @@ class CommunicationGUI:
         self.ax1.clear()
         self.ax2.clear()
         self.ax3.clear()
+        self.ax4.clear()
+
         self.ax1.set_title("BPSK simboli")
         self.ax2.set_title("Noisy vs synced")
-        self.ax3.set_title("Biti: original / demod / decoded")
+        self.ax3.set_title("Biti: original / decoded")
+        self.ax4.set_title("BER / OFDM analiza")
+
         self.ax1.set_xlabel("Indeks")
         self.ax2.set_xlabel("Indeks")
         self.ax3.set_xlabel("Indeks")
+        self.ax4.set_xlabel("SNR [dB]")
+
         self.ax1.grid(True)
         self.ax2.grid(True)
         self.ax3.grid(True)
+        self.ax4.grid(True)
 
     def clear_output(self) -> None:
-        for box in (self.summary_box, self.frame_box, self.rx_box):
+        for box in (self.summary_box, self.frame_box, self.rx_box, self.analysis_box):
             box.delete("1.0", tk.END)
         self._reset_axes()
         self.canvas.draw()
@@ -179,7 +325,6 @@ class CommunicationGUI:
             self.demodulated_bits = bpsk_demodulate(self.synced_symbols)
             self.decoded_bits, self.detected_errors = hamming_dekodiraj(self.demodulated_bits)
 
-            from transmitter import bits_to_bytes  # local reuse without circular redesign
             self.received_frame = bits_to_bytes(self.decoded_bits)
             self.received_parsed = parse_frame(self.received_frame)
 
@@ -189,6 +334,72 @@ class CommunicationGUI:
             self._draw_plots(max_points)
         except Exception as exc:
             messagebox.showerror("Napaka", f"Pri izvajanju je prišlo do napake:\n\n{exc}")
+
+    def run_ber_test(self) -> None:
+        try:
+            num_bits = int(self.test_bits_var.get())
+            snr_values = self.ber_snr_values
+
+            self.ber_results = run_simple_ber_test(num_bits, snr_values)
+
+            self.analysis_box.delete("1.0", tk.END)
+            text = []
+            text.append("=== BPSK BER TEST ===\n\n")
+            text.append(f"Number of bits: {num_bits}\n\n")
+
+            for snr, ber in zip(snr_values, self.ber_results):
+                text.append(f"SNR = {snr:>3} dB   BER = {ber:.6f}\n")
+
+            self.analysis_box.insert(tk.END, "".join(text))
+
+            self.ax4.clear()
+            self.ax4.plot(snr_values, self.ber_results, marker="o", label="BPSK BER")
+            self.ax4.set_yscale("log")
+            self.ax4.set_xlabel("SNR [dB]")
+            self.ax4.set_ylabel("BER")
+            self.ax4.set_title("BPSK BER vs SNR")
+            self.ax4.grid(True)
+            self.ax4.legend()
+
+            self.canvas.draw()
+
+        except Exception as exc:
+            messagebox.showerror("Napaka", f"BER test failed:\n\n{exc}")
+
+    def run_ofdm_test(self) -> None:
+        try:
+            num_bits = int(self.test_bits_var.get())
+            snr_values = self.ber_snr_values
+
+            self.ofdm_results = run_simple_ofdm_test(num_bits, snr_values)
+
+            self.analysis_box.delete("1.0", tk.END)
+            text = []
+            text.append("=== OFDM BER TEST ===\n\n")
+            text.append(f"Number of bits: {num_bits}\n\n")
+
+            for snr, ber in zip(snr_values, self.ofdm_results):
+                text.append(f"SNR = {snr:>3} dB   BER = {ber:.6f}\n")
+
+            self.analysis_box.insert(tk.END, "".join(text))
+
+            self.ax4.clear()
+            self.ax4.plot(snr_values, self.ofdm_results, marker="o", label="OFDM BER")
+
+            if self.ber_results:
+                self.ax4.plot(snr_values, self.ber_results, marker="x", label="BPSK BER")
+
+            self.ax4.set_yscale("log")
+            self.ax4.set_xlabel("SNR [dB]")
+            self.ax4.set_ylabel("BER")
+            self.ax4.set_title("OFDM / BPSK comparison")
+            self.ax4.grid(True)
+            self.ax4.legend()
+
+            self.canvas.draw()
+
+        except Exception as exc:
+            messagebox.showerror("Napaka", f"OFDM test failed:\n\n{exc}")
 
     def _fill_summary(self, snr: float) -> None:
         self.summary_box.delete("1.0", tk.END)
@@ -290,8 +501,13 @@ class CommunicationGUI:
         self.ax3.set_ylabel("Bit")
         self.ax3.legend()
 
+        self.ax4.set_title("BER / OFDM analiza")
+        self.ax4.set_xlabel("SNR [dB]")
+        self.ax4.grid(True)
+
         self.figure.tight_layout(pad=2.0)
         self.canvas.draw()
+
 
 def run_gui() -> None:
     root = tk.Tk()
