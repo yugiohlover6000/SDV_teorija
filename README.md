@@ -10,4 +10,4 @@ Repozitorij vsebuje gradiva, projekte, dokumentacijo in kodo za predmet Sistemi 
 - [Jakob Sadar](https://www.linkedin.com/in/jakobsadar/)
 
 ## Vsebina
-- [Kolokvij 1](./kolokvij_1/documentation.md)
+- [Kolokvij 1](./kolokvij_1/README.md)
