@@ -31,7 +31,6 @@ def build_payload(ime: str, priimek: str, vpisna: str, drzava: str) -> str:
     return f"{ime}|{priimek}|{vpisna}|{drzava}"
 
 
-
 def calculate_crc32(data):
     crc_value = zlib.crc32(data) & 0xFFFFFFFF  # keep CRC as an unsigned 32-bit value
     return int_to_bytes(crc_value, 4)  # CRC-32 is stored as 4 bytes
@@ -94,7 +93,7 @@ def hamming_encode_nibble(data_bits):
     return [p1, p2, d1, p4, d2, d3, d4] # Return list
 
 
-# Apliciraj hamming_encode_nibble() na bit streamu
+# Apliciraj hamming_encode_nibble() na bit streamu - 4biti
 
 def hamming_kodiraj_bistream(biti):
 
@@ -113,8 +112,6 @@ def error_simulation(coded_bits, pos):
     biti = list(coded_bits)
     biti[pos] ^= 1
     return biti
-
-
 
 
 def build_frame(payload_text):
@@ -178,11 +175,6 @@ def parse_frame(frame: bytes) -> Dict:
         "crc_ok":         received_crc == calculated_crc,
         "eof":            eof,
     }
-
-def code_frame_with_hamming(frame: bytes) -> List[int]:
-    bits = frame_to_bits(frame)
-    return hamming_kodiraj_bistream(bits)
-
 
 def bpsk_modulate(bits):
     # Fazni zamik 180 deg predstavlja 0, fazni zamik 0 deg predstavlja 1

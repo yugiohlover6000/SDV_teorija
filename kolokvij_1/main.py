@@ -1,5 +1,6 @@
 from transmitter import build_frame, build_payload
-from display import (
+from visualisation.gui import run_gui
+from visualisation.display import (
     bytes_to_hex,
     bytes_to_bitstring,
     print_frame_sections,
@@ -12,16 +13,16 @@ from display import (
     print_received_frame,
 )
 
-def main():
+
+def run_terminal_demo():
     message = build_payload("Niko", "Korosec", "12345", "Slovenija")
-    snr = 10
+    snr = 5  # ocitno se vidi, da pravilno popravi napako
 
     print_original_message(message)
 
     # Oddajna stran
     frame = build_frame(message)
-    
-    # Print okvirja v različnih formatih
+
     print("\nFULL FRAME (HEX):")
     print(bytes_to_hex(frame))
 
@@ -29,9 +30,8 @@ def main():
     print(bytes_to_bitstring(frame))
     print_frame_sections(frame)
 
-    # Prikažemo Hammingovo kodiranje in BPSK modulacijo
     print_hamming_coded_bits(frame)
-    modulated = print_bpsk(frame,snr)
+    modulated = print_bpsk(frame, snr)
 
     print("KONEC ODDAJNE STRANI")
     print("=" * 72)
@@ -43,6 +43,15 @@ def main():
     demodulated = print_demodulated_bpsk(synced)
     decoded = print_decoded_hamming(demodulated)
     print_received_frame(decoded)
+
+
+def main():
+    mode = input("Izberi nacin zagona [1=terminal, 2=GUI]: ").strip()
+
+    if mode == "2":
+        run_gui()
+    else:
+        run_terminal_demo()
 
 
 if __name__ == "__main__":

@@ -21,13 +21,20 @@ def costas_loop(noisy_symbols: list, alpha: float = 0.05) -> list:
 
 
 def bpsk_demodulate(symbols):
-    return [0 if symbol >= 0 else 1 for symbol in symbols]
+    demodulated_bits = []
+
+    for symbol in symbols:
+        if symbol >= 0:
+            demodulated_bits.append(0)
+        else:
+            demodulated_bits.append(1)
+
+    return demodulated_bits
 
 
 def hamming_decode_nibble(coded_bits):
     p1, p2, d1, p4, d2, d3, d4 = coded_bits
 
-    
     s1 = p1 ^ d1 ^ d2 ^ d4        # pokriva pos 1,3,5,7
     s2 = p2 ^ d1 ^ d3 ^ d4        # pokriva pos 2,3,6,7
     s4 = p4 ^ d2 ^ d3 ^ d4        # pokriva pos 4,5,6,7

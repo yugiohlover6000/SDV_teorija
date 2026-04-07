@@ -1,7 +1,5 @@
 # SDV – Sistemi daljinskega vodenja
 
-## Predmet
-Sistemi daljinskega vodenja
 
 ## Opis
 Repozitorij vsebuje gradiva, projekte, dokumentacijo in kodo za predmet Sistemi daljinskega vodenja. Posamezni kolokviji in naloge so organizirani po ločenih mapah.
