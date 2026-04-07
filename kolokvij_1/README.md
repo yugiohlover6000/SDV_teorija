@@ -393,36 +393,37 @@ Najprej se sestavi okvir, izvede kodiranje, modulacija in dodajanje šuma. Nato 
 
 Funkcija sama ne vsebuje bistvene logike posameznih metod, temveč skrbi za pravilno zaporedje izvajanja in povezovanje vseh modulov.
 
-### 9. Vizualizacija
+## 9. Vizualizacija
+
 <div align="justify">
 
-Za boljšo preglednost delovanja sistema smo pripravili tudi grafični uporabniški vmesnik, ki omogoča interaktivni prikaz celotnega komunikacijskega poteka. Namen vizualizacije ni samo lepši prikaz rezultatov, ampak predvsem lažje razumevanje posameznih korakov oddajne in sprejemne strani.
+Za lažji pregled delovanja sistema smo pripravili tudi grafični uporabniški vmesnik. Namen GUI-ja je, da lahko uporabnik na enem mestu vnese vhodne podatke, zažene komunikacijski potek in takoj vidi rezultate.
 
-<p align="center"> <img src="assets/gui.png" width="500"/> </p>
+<p align="center"> <img src="assets/gui.png" width="700"/> </p>
 
-V grafičnem vmesniku lahko uporabnik vnese vhodne podatke, kot so ime, priimek, vpisna številka, država in izbrani SNR, nato pa zažene celoten potek prenosa. Sistem prikaže sestavljeno sporočilo, podatkovni okvir, število bitov, število Hammingovih bitov, število zaznanih napak po demodulaciji, število popravljenih blokov ter končno sprejeto sporočilo.
+V vmesniku lahko vnesemo ime, priimek, vpisno številko, državo in vrednost SNR. Nato program izvede celoten potek prenosa in prikaže najpomembnejše informacije o sporočilu, okvirju, številu bitov, napakah in končnem sprejetem sporočilu.
 
-Poleg tekstovnega prikaza GUI vsebuje tudi več grafov, s katerimi lažje opazujemo obnašanje sistema:
+Poleg tekstovnega izpisa GUI vsebuje tudi grafe, s katerimi lahko opazujemo:
+- originalne BPSK simbole,
+- vpliv šuma na signal,
+- primerjavo originalnih in dekodiranih bitov,
+- graf `BER` v odvisnosti od `SNR`,
+- primerjavo med `BPSK` in `OFDM-BPSK`.
 
-- prikaz originalnih BPSK simbolov,
-- primerjava zasumljenih in sinhroniziranih simbolov,
-- primerjava originalnih in dekodiranih bitov,
-- graf BER v odvisnosti od SNR,
-- primerjalni graf med osnovno BPSK shemo in poenostavljeno OFDM shemo.
+Takšen prikaz je uporaben predvsem zato, ker lažje razumemo, kaj se s signalom dogaja med oddajo in sprejemom.
 
 </div>
 
 ## 10. Testiranje
 <div align="justify">
 
-Za preverjanje delovanja komunikacijske sheme smo uporabili dva glavna pristopa testiranja:
+Za preverjanje delovanja sistema smo uporabili dva testa:
+- `BER test`,
+- primerjavo z `OFDM` modulacijo.
 
-**BER test**, s katerim opazujemo vpliv šuma na pravilnost prenosa,
-**primerjavo z OFDM modulacijo,** s katero ocenimo razliko med enostavnejšo enonosilčno shemo in poenostavljeno večnosilčno shemo.
+Pri obeh testih nas zanima predvsem, kako se sistem obnaša pri različnih vrednostih `SNR`, torej pri različnih nivojih šuma. Na ta način lahko ocenimo, kako zanesljiv je prenos in kako dobra je izbrana modulacijska shema.
 
-Namen testiranja ni bil le preveriti, ali sistem deluje, ampak tudi ugotoviti, kako se obnaša pri različnih nivojih šuma in kako robustna je izbrana modulacijska shema. Poseben poudarek je na odvisnosti med `SNR` in `BER`, saj ta zveza neposredno pove, kako zanesljiv je prenos skozi kanal.
-
-Pri testiranju smo uporabili poenostavljen model komunikacijskega kanala z dodatkom `AWGN` šuma. Ta model ne predstavlja vseh pojavov realnega kanala, je pa zelo primeren za osnovno analizo odpornosti na napake, saj jasno pokaže vpliv šuma na demodulacijo in rekonstrukcijo bitnega toka.
+Za simulacijo kanala smo uporabili model `AWGN`, ki doda signalu beli Gaussov šum. To je poenostavljen model, vendar je zelo uporaben za osnovno analizo vpliva šuma na prenos.
 
 </div>
 
@@ -432,92 +433,40 @@ Pri testiranju smo uporabili poenostavljen model komunikacijskega kanala z dodat
 
 #### Namen BER testa
 
-`BER` oziroma Bit Error Rate predstavlja razmerje med številom napačno sprejetih bitov in skupnim številom vseh poslanih bitov. To je ena izmed najpomembnejših mer pri vrednotenju digitalnih komunikacijskih sistemov, saj neposredno pove, kako uspešen je prenos informacij skozi kanal.
-
-Matematično ga zapišemo kot:
+`BER` pomeni *Bit Error Rate*. To je razmerje med številom napačno sprejetih bitov in skupnim številom vseh poslanih bitov.
 
 ```
 BER = število napačnih bitov / skupno število vseh bitov
 ```
 
-BER test smo uporabili zato, ker z njim lahko zelo jasno ocenimo, kako občutljiv je naš sistem na šum. Če je BER velik, pomeni, da sprejemnik veliko bitov sprejme napačno. Če je BER majhen, pomeni, da sistem deluje zanesljivo. Pri dovolj velikem `SNR` mora BER začeti padati proti zelo majhnim vrednostim.
+BER test smo uporabili zato, da preverimo, kako občutljiv je sistem na šum. Če je BER velik, pomeni, da se med prenosom pojavi veliko napak. Če je BER majhen, pomeni, da sistem deluje dobro.
 
-#### Uporabljeni pristop
+Pri testu smo naredili naslednje korake:
 
-Za testiranje smo pripravili ločen program, v katerem ne obravnavamo celotnega okvirja, temveč osnovni prenos bitov skozi kanal z uporabo BPSK modulacije. Tak pristop je poenostavljen, vendar zelo uporaben, saj omogoča jasno in neposredno analizo vpliva šuma na prenos.
+1. generirali smo naključne bite,
+2. bite modulirali z BPSK,
+3. signalu dodali AWGN šum,
+4. signal demodulirali nazaj v bite,
+5. primerjali poslane in sprejete bite,
+6. izračunali BER.
 
-Postopek testa je naslednji:
+Ta postopek smo ponovili za več različnih vrednosti SNR.
 
-1. generiramo naključne bite,
-2. bite moduliramo z BPSK,
-3. moduliranemu signalu dodamo AWGN šum,
-4. signal demoduliramo nazaj v bite,
-5. primerjamo poslane in sprejete bite,
-6. izračunamo BER,
-7. celoten postopek ponovimo za več različnih vrednosti SNR.
+**Uporabljene funkcije pri BER testu so:**
 
-Na ta način dobimo graf BER v odvisnosti od SNR, iz katerega lahko ocenimo, pri katerih pogojih sistem deluje dobro.
+`generate_bits(num_bits)` – ustvari naključne bite,
+`bpsk_modulate(bits)` – bite pretvori v BPSK simbole,
+`awgn_noise(signal, snr_db)` – signalu doda šum,
+`bpsk_demodulate(symbols)` – simbole pretvori nazaj v bite,
+`calculate_ber(transmitted_bits, received_bits)` – izračuna BER,
+`ber_simulation(num_bits, snr_values)` – izvede celoten test,
+`plot_graph(snr_values, ber_results)` – nariše graf rezultatov.
 
-#### Funkcije uporabljene v BER testu
-
-V programu za BER test smo uporabili naslednje funkcije:
-
-`generate_bits(num_bits)`
-Funkcija generira seznam naključnih bitov 0 in 1. Ti biti predstavljajo vhodne podatke, ki jih želimo prenesti skozi komunikacijski kanal.
-
-`bpsk_modulate(bits)`
-Ta funkcija, prevzeta iz modula `transmitter.py`, izvaja BPSK modulacijo. Vsak bit preslika v simbol:
-
-```
-0 -> +1
-1 -> -1
-```
-
-Tako dobimo signal, pripravljen za prenos skozi kanal.
-
-`awgn_noise(signal, snr_db)`
-Fugnkcija doda moduluiranemu signalu beli Gaussov šum. Nivo šuma je določen z izbrano vrednostjo `SNR`. Ta funkcija simulira neidealne pogoje prenosa.
-
-`bpsk_demodulate(symbols)`
-Funkcija iz modula `receiver.py` sprejete simbole pretvori nazaj v bite. Odločitev temelji na predznaku simbola:
-
-- simbol večji ali enak 0 pomeni bit 0,
-- simbol manjši od 0 pomeni bit 1.
-
-
-`calculate_ber(transmitted_bits, received_bits)`
-Funkcija primerja poslani in sprejeti bitni tok ter prešteje število razlik. Nato izračuna razmerje med številom napak in številom vseh bitov.
-
-`ber_simulation(num_bits, snr_values)`
-Gre za glavno funkcijo testa. Za vsako vrednost `SNR` izvede celoten prenosni cikel in izračuna `BER`.
-
-`plot_graph(snr_values, ber_results)`
-Funkcija rezultate prikaže na grafu. Na osi x je SNR [dB], na osi y pa BER. Ker je BER pogosto zelo majhen, uporabimo logaritemsko skalo na osi y.
-
-#### Delovanje testa
-
-Pri vsakem testu smo določili število poslanih bitov, v našem primeru na primer `10000`, in seznam vrednosti `SNR`, na primer:
-
-```
-[-2, 0, 2, 4, 6, 8, 10]
-```
-
-Za vsako od teh vrednosti se izvede simulacija prenosa in izračuna nova vrednost `BER`. Tako dobimo več točk, ki jih nato povežemo v graf.
-
-Na podlagi dobljenih rezultatov lahko opazimo tipično lastnost digitalnih komunikacijskih sistemov:
-
-- pri nizkem `SNR` je veliko šuma, zato je `BER` velik,
-- pri višjem `SNR` je vpliv šuma manjši, zato `BER` hitro pada.
-
-To pomeni, da komunikacijska shema pri dovolj velikem SNR postane odporna na napake.
-
-#### Analiza rezultatov
-
-Pri izvedenem testu smo dobili tipičen padajoč potek BER v odvisnosti od SNR. Rezultati so pokazali, da je pri nizkih vrednostih SNR število napak veliko, nato pa se z naraščanjem SNR močno zmanjša.
+Pri rezultatih smo opazili, da je BER pri nizkem SNR velik, nato pa z naraščanjem SNR hitro pada. To pomeni, da je sistem pri večjem razmerju signal-šum bolj odporen na napake.
 
 Primer rezultatov:
 
-```
+```text
 SNR = -2 dB   BER = 0.1321
 SNR =  0 dB   BER = 0.0771
 SNR =  2 dB   BER = 0.0386
@@ -527,23 +476,60 @@ SNR =  8 dB   BER = 0.0002
 SNR = 10 dB   BER = 0.0
 ```
 
-Iz teh rezultatov vidimo, da se sistem pri nizkih `SNR` obnaša precej slabo, saj je delež napačno sprejetih bitov velik. Ko pa `SNR` preseže približno `6 dB`, začne biti BER že zelo majhen. Pri `8 dB` je skoraj zanemarljiv, pri `10 dB` pa v izvedeni simulaciji na vzorcu 10000 bitov ni bilo zaznanih napak.
+<p align="center"> <img src="assets/BER.png" width="550"/> </p>
 
-Pomembno je poudariti, da vrednost `BER = 0.0` ne pomeni, da sistem v absolutnem smislu nikoli ne naredi napake, temveč le, da v konkretnem testu na izbranem številu bitov nismo zaznali nobene napake.
+Iz teh rezultatov lahko ocenimo, da začne sistem delovati dovolj zanesljivo približno pri` 6 dB` in več. Pri `8 dB` je napak že zelo malo, pri `10 dB` pa v izvedenem testu na `10000` bitih ni bilo zaznanih napak.
 
-### 10.2 OFDM modulacija
+Pomembno je poudariti, da `BER = 0.0` ne pomeni, da napak nikoli ni, ampak samo to, da jih v tem konkretnem testu nismo zaznali.
 
+</div>
+
+### 10.2 Primerjava z OFDM modulacijo
+
+<div align="justify">
+
+Poleg osnovne `BPSK` sheme smo pripravili še poenostavljeno primerjavo z `OFDM-BPSK`. Namen tega dela je bil preveriti, kako se večnosilčna modulacija obnaša v primerjavi z osnovno enonosilčno modulacijo.
+
+Pri OFDM (Orthogonal Frequency Division Multiplexing) se podatki ne pošiljajo po enem samem nosilcu, ampak se razdelijo na več podnosilcev. Zaradi tega je OFDM zelo uporaben predvsem v zahtevnejših komunikacijskih kanalih.
+
+V našem testu smo uporabili poenostavljen model `OFDM-BPSK`, kjer smo:
+1. generirali naključne bite,
+2. bite preslikali v BPSK simbole,
+3. simbole razdelili po podnosilcih,
+4. izvedli `IFFT`,
+5. dodali šum,
+6. na sprejemni strani izvedli `FFT`,
+7. simbole pretvorili nazaj v bite,
+8. izračunali `BER`.
+
+Uporabljene funkcije pri OFDM testu so:
+- `generate_bits(num_bits)` – ustvari naključne bite,
+- `bpsk_map(bits)` – bite pretvori v simbole `+1` in `-1`,
+- `bpsk_demap(symbols)` – simbole pretvori nazaj v bite,
+- `add_complex_awgn(signal, snr_db)` – OFDM signalu doda kompleksen šum,
+- `ofdm_bpsk_simulation(num_bits, snr_values, num_subcarriers=64)` – izvede celoten OFDM test,
+- `plot_graph(snr_values, ber_results)` – nariše graf rezultatov.
+
+Pri primerjavi smo opazili, da je v našem poenostavljenem `AWGN` kanalu osnovna `BPSK` shema dosegla boljši `BER` kot poenostavljena `OFDM-BPSK` shema. To ni nič nenavadnega, saj OFDM svoje prednosti pokaže predvsem v bolj zahtevnih kanalih, na primer pri večpotnem širjenju.
+
+Iz tega lahko zaključimo:
+- `BPSK` je enostavnejša za implementacijo,
+- `OFDM` je bolj kompleksna,
+- v našem testu `OFDM` ni dosegla boljšega BER,
+- OFDM je bolj smiselna v zahtevnejših komunikacijskih sistemih.
+
+<p align="center"> <img src="assets/OFDM.png" width="550"/> </p>
+
+Pomembno je tudi poudariti, da je naš OFDM model poenostavljen. Nismo uporabili cikličnega prefiksa, sinhronizacije ali ocenjevanja kanala, zato ne gre za popoln realni OFDM sistem, ampak za osnovno primerjavo principa delovanja.
+
+</div>
 
 ## 11. Zaključek
 
-V nalogi smo izdelali poenostavljen komunikacijski sistem, s katerim smo prikazali celoten potek prenosa podatkov skozi fizično plast. Sistem vključuje sestavo podatkovnega okvirja, zaščito s CRC-32, Hammingovo kodiranje, BPSK modulacijo, dodajanje šuma, sinhronizacijo na sprejemni strani, demodulacijo, dekodiranje ter končno preverjanje pravilnosti sprejetega okvirja.
+<div align="justify">
 
-S pomočjo projekta smo bolje razumeli osnovne gradnike digitalnih komunikacijskih sistemov in razliko med zaznavanjem napak ter popravljanjem napak. CRC-32 omogoča zaznavanje napak v okviru, Hamming(7,4) pa popravljanje enobitnih napak že med samim sprejemom. BPSK modulacija se je izkazala kot preprosta in primerna izbira za osnovno implementacijo fizične plasti.
+V nalogi smo izdelali poenostavljen komunikacijski sistem, s katerim smo prikazali celoten potek prenosa podatkov skozi fizično plast. Sistem vključuje sestavo podatkovnega okvirja, CRC-32 zaščito, Hammingovo kodiranje, BPSK modulacijo, dodajanje šuma, sinhronizacijo na sprejemni strani, demodulacijo, dekodiranje ter preverjanje pravilnosti prenosa. S projektom smo bolje razumeli osnovne gradnike digitalnih komunikacijskih sistemov ter razliko med zaznavanjem in popravljanjem napak. CRC-32 omogoča zaznavanje napak v okviru, Hamming(7,4) pa omogoča popravljanje enobitnih napak že med sprejemom.
 
-Pomemben del naloge je predstavljalo tudi testiranje. Z BER analizo smo pokazali, kako se z naraščanjem razmerja signal-šum zmanjšuje število napačno sprejetih bitov. Ugotovili smo, da sistem pri našem modelu kanala postane dovolj odporen na napake približno od 6 dB naprej, pri višjih vrednostih pa je prenos zelo zanesljiv.
-
-V drugem delu testiranja smo osnovno BPSK shemo primerjali še s poenostavljeno OFDM-BPSK modulacijo. Primerjava je pokazala, da v našem poenostavljenem AWGN kanalu OFDM ni dosegel boljšega BER od osnovne BPSK sheme. Kljub temu smo skozi ta del bolje razumeli razliko med enonosilčnim in večnosilčnim prenosom ter spoznali, da se prednosti OFDM pokažejo predvsem v zahtevnejših kanalih.
-
-Program je zaradi razdelitve na več modulov pregleden in dovolj enostaven, da omogoča analizo posameznih korakov, hkrati pa dovolj razširljiv za nadaljnje izboljšave. V prihodnje bi bilo mogoče sistem nadgraditi z bolj realističnim modelom kanala, uvedbo cikličnega prefiksa pri OFDM, zahtevnejšo sinhronizacijo ter naprednejšimi modulacijskimi postopki.
+Pomemben del naloge je predstavljalo tudi testiranje. Z BER analizo smo pokazali, da se z večanjem `SNR` število napak zmanjšuje in da sistem začne delovati dovolj zanesljivo približno pri `6 dB` in več. Pri primerjavi z OFDM smo ugotovili, da je v našem poenostavljenem `AWGN` kanalu osnovna `BPSK` shema dosegla boljši `BER` kot poenostavljena `OFDM-BPSK` shema, vendar nam je ta primerjava vseeno pomagala razumeti razliko med enonosilčnim in večnosilčnim prenosom. Program je pregleden in razdeljen na več modulov, zato ga je mogoče enostavno analizirati in v prihodnje nadgraditi z bolj realističnim modelom kanala, zahtevnejšo sinhronizacijo ter bolj popolno OFDM implementacijo.
 
 </div>

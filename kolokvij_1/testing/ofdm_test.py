@@ -1,32 +1,33 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from transmitter import bpsk_modulate
+from receiver import bpsk_demodulate
 
 
 def generate_bits(num_bits):
-    return np.random.randint(0, 2, num_bits).tolist()
-
-
-def bpsk_map(bits):
-    symbols = []
-    for bit in bits:
-        if bit == 1:
-            symbols.append(1)
-        else:
-            symbols.append(-1)
-    return np.array(symbols, dtype=complex)
-
-
-def bpsk_demap(symbols):
     bits = []
-    for s in symbols:
-        if s.real > 0:
-            bits.append(1)
-        else:
-            bits.append(0)
+    for _ in range(num_bits):
+        bits.append(random.randint(0, 1))
     return bits
 
 
+def calculate_ber(tx_bits, rx_bits):
+    errors = 0
+    for tx, rx in zip(tx_bits, rx_bits):
+        if tx != rx:
+            errors += 1
+    return errors / len(tx_bits)
+
+
 def add_complex_awgn(signal, snr_db):
+    signal = np.array(signal, dtype=complex)
+
     snr_linear = 10 ** (snr_db / 10)
     signal_power = np.mean(np.abs(signal) ** 2)
     noise_power = signal_power / snr_linear
@@ -38,20 +39,12 @@ def add_complex_awgn(signal, snr_db):
     return signal + noise
 
 
-def calculate_ber(tx_bits, rx_bits):
-    errors = 0
-    for tx, rx in zip(tx_bits, rx_bits):
-        if tx != rx:
-            errors += 1
-    return errors / len(tx_bits)
-
-
 def ofdm_bpsk_simulation(num_bits, snr_values, num_subcarriers=64):
     ber_results = []
 
     for snr_db in snr_values:
         tx_bits = generate_bits(num_bits)
-        tx_symbols = bpsk_map(tx_bits)
+        tx_symbols = np.array(bpsk_modulate(tx_bits), dtype=complex)
 
         rx_symbols_all = []
 
@@ -69,7 +62,7 @@ def ofdm_bpsk_simulation(num_bits, snr_values, num_subcarriers=64):
 
             rx_symbols_all.extend(rx_block[:original_len])
 
-        rx_bits = bpsk_demap(rx_symbols_all)
+        rx_bits = bpsk_demodulate(rx_symbols_all)
         rx_bits = rx_bits[:len(tx_bits)]
 
         ber = calculate_ber(tx_bits, rx_bits)
