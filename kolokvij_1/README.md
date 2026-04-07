@@ -37,23 +37,27 @@ Pri implementaciji sistema smo uporabili več osnovnih metod s področja digital
 
 ## 3. Zgradba programa
 
-Program je razdeljen na štiri module, ki skupaj pokrivajo celoten potek komunikacije, vse od oddaje do sprejema in prikaza rezultatov.
+Program je razdeljen na tri glavne module ter dodatna modula za testiranje in vizualizacijo. Skupaj pokrivajo celoten potek komunikacije, analizo delovanja sistema in grafični prikaz rezultatov.
 
 ### 3.1 `main.py`
 
-program `main.py` vsebuje glavni potek programa. V njej določimo vhodno sporočilo, nato pa po vrsti izvedemo vse korake oddajne in sprejemne strani. Ta program torej povezuje ostale module in skrbi za pravilen vrstni red izvajanja.
+Modul `main.py` vsebuje glavni potek programa. V njem določimo vhodno sporočilo in zaporedno izvedemo vse korake oddajne in sprejemne strani. Ta modul povezuje ostale dele sistema in skrbi za pravilen vrstni red izvajanja.
 
 ### 3.2 `transmitter.py`
 
-program `transmitter.py` vsebuje glavni del oddajne strani. V njej so definirane konstante okvirja ter funkcije za sestavo okvirja, izračun CRC-32, pretvorbo okvirja v bitni tok, Hammingovo kodiranje, BPSK modulacijo in dodajanje šuma.
+Modul `transmitter.py` vsebuje glavni del oddajne strani. V njem so definirane konstante okvirja ter funkcije za sestavo okvirja, izračun CRC-32, pretvorbo okvirja v bitni tok, Hammingovo kodiranje, BPSK modulacijo in dodajanje šuma.
 
 ### 3.3 `receiver.py`
 
-program `receiver.py` vsebuje funkcije sprejemne strani. Sem spadajo Costasova zanka, BPSK demodulacija ter Hammingovo dekodiranje in popravljanje enobitnih napak. Namen tega modula je, da iz prejetega signala ponovno dobi pravilne podatke.
+Modul `receiver.py` vsebuje funkcije sprejemne strani. Sem spadajo Costasova zanka, BPSK demodulacija ter Hammingovo dekodiranje in popravljanje enobitnih napak. Namen tega modula je, da iz prejetega signala ponovno dobi pravilne podatke.
 
-### 3.4 `display.py`
+### 3.4 Modul za testiranje
 
-`display.py` vsebuje pomožne funkcije za izpis rezultatov v terminal. Uporablja se za prikaz okvirja, bitnega toka, Hammingovega kodiranja, modulacije, sprejemne strani in končne rekonstrukcije sporočila. Ta del ni ključen za samo delovanje sistema, je pa zelo uporaben za razlago in pregled nad posameznimi koraki.
+Modul za testiranje vsebuje programe za preverjanje delovanja komunikacijske sheme. Sem spadata predvsem BER test in primerjava z OFDM modulacijo. Namen tega dela je analiza vpliva šuma na prenos ter primerjava osnovne BPSK sheme s poenostavljeno OFDM-BPSK shemo.
+
+### 3.5 Modul za vizualizacijo
+
+Modul za vizualizacijo vsebuje funkcije za prikaz rezultatov v terminalu in v grafičnem uporabniškem vmesniku. Uporablja se za prikaz okvirja, bitnega toka, Hammingovega kodiranja, signalov na oddajni in sprejemni strani ter rezultatov BER in OFDM testov. Ta del ni ključen za samo delovanje sistema, je pa zelo uporaben za razlago in pregled nad posameznimi koraki.
 </div>
 
 ## 4. Celoten workflow sistema
