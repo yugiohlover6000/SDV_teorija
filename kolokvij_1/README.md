@@ -476,7 +476,7 @@ SNR =  8 dB   BER = 0.0002
 SNR = 10 dB   BER = 0.0
 ```
 
-<p align="center"> <img src="assets/BER.png" width="550"/> </p>
+<p align="center"> <img src="assets/BER.jpg" width="550"/> </p>
 
 Iz teh rezultatov lahko ocenimo, da začne sistem delovati dovolj zanesljivo približno pri` 6 dB` in več. Pri `8 dB` je napak že zelo malo, pri `10 dB` pa v izvedenem testu na `10000` bitih ni bilo zaznanih napak.
 
