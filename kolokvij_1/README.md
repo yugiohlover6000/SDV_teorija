@@ -536,4 +536,13 @@ V nalogi smo izdelali poenostavljen komunikacijski sistem, s katerim smo prikaza
 
 Pomemben del naloge je predstavljalo tudi testiranje. Z BER analizo smo pokazali, da se z večanjem `SNR` število napak zmanjšuje in da sistem začne delovati dovolj zanesljivo približno pri `6 dB` in več. Pri primerjavi z OFDM smo ugotovili, da je v našem poenostavljenem `AWGN` kanalu osnovna `BPSK` shema dosegla boljši `BER` kot poenostavljena `OFDM-BPSK` shema, vendar nam je ta primerjava vseeno pomagala razumeti razliko med enonosilčnim in večnosilčnim prenosom. Program je pregleden in razdeljen na več modulov, zato ga je mogoče enostavno analizirati in v prihodnje nadgraditi z bolj realističnim modelom kanala, zahtevnejšo sinhronizacijo ter bolj popolno OFDM implementacijo.
 
+
+
+
+## Viri
+
+- https://www.geeksforgeeks.org/python/hamming-code-implementation-in-python/
+- https://michaeldipperstein.github.io/hamming.html
+- 
+
 </div>
