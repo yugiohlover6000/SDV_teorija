@@ -543,6 +543,13 @@ Pomemben del naloge je predstavljalo tudi testiranje. Z BER analizo smo pokazali
 
 - https://www.geeksforgeeks.org/python/hamming-code-implementation-in-python/
 - https://michaeldipperstein.github.io/hamming.html
-- 
+- https://stackoverflow.com/questions/41564890/crc32-calculation-in-python-without-using-libraries
+- https://www.geeksforgeeks.org/python/zlib-crc32-in-python/
+- https://www.geeksforgeeks.org/electronics-engineering/bpsk-binary-phase-shift-keying/
+- https://wirelesspi.com/costas-loop-for-carrier-phase-synchronization/
+- https://en.wikipedia.org/wiki/Signal-to-noise_ratio
+- https://github.com/disabel1a/infocom2
+- https://www.rfwireless-world.com/source-code/awgn-python-adding-noise-based-on-snr-db
+- https://www.youtube.com/watch?v=H3dynQyE8RY
 
 </div>
